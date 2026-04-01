@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 
 const C = {
   bg: "#0d0d14",
@@ -129,22 +129,24 @@ function PomodoroTimer() {
     longBreak: "Long Break 🎉",
   };
 
-  const handlePhaseComplete = () => {
+  const handlePhaseComplete = useCallback(() => {
     if (phase === "study") {
-      const newCompleted = completedBlocks + 1;
-      setCompletedBlocks(newCompleted);
-      if (newCompleted % 4 === 0) {
-        setPhase("longBreak");
-        setTimeLeft(current.longBreak * 60);
-      } else {
-        setPhase("shortBreak");
-        setTimeLeft(current.shortBreak * 60);
-      }
+      setCompletedBlocks(prev => {
+        const newCompleted = prev + 1;
+        if (newCompleted % 4 === 0) {
+          setPhase("longBreak");
+          setTimeLeft(current.longBreak * 60);
+        } else {
+          setPhase("shortBreak");
+          setTimeLeft(current.shortBreak * 60);
+        }
+        return newCompleted;
+      });
     } else {
       setPhase("study");
       setTimeLeft(current.study * 60);
     }
-  };
+  }, [phase, current]);
 
   useEffect(() => {
     if (running) {
@@ -161,7 +163,7 @@ function PomodoroTimer() {
       }, 1000);
     }
     return () => clearInterval(intervalRef.current);
-  }, [running, phase]);
+  }, [running, phase, handlePhaseComplete]);
 
   const reset = () => {
     clearInterval(intervalRef.current);
@@ -347,7 +349,7 @@ function GamificationPanel({ points, streak }) {
 export default function Features() {
   const [mood, setMood] = useState("");
   const [points, setPoints] = useState(0);   // ← starts at 0
-  const [streak, setStreak] = useState(0);   // ← starts at 0
+  const [streak] = useState(0);   // ← starts at 0
   const [activeSection, setActiveSection] = useState("mood");
 
   const sections = [
